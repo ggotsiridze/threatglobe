@@ -1,0 +1,27 @@
+name: threatglobe
+
+services:
+  backend:
+    build: ./backend
+    environment:
+      THREATGLOBE_SOURCE: ${THREATGLOBE_SOURCE:-demo}
+      PUBLIC_MODE: ${PUBLIC_MODE:-true}
+      DEMO_EVENTS_PER_SECOND: ${DEMO_EVENTS_PER_SECOND:-1.2}
+      DEMO_HISTORY_HOURS: ${DEMO_HISTORY_HOURS:-6}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped

@@ -62,7 +62,14 @@ def test_replay_sized_request_is_accepted(client):
 
 
 @pytest.mark.parametrize(
-    "path", ["/api/events?limit=0", "/api/events?limit=5001", "/api/events?severity=EXTREME", "/api/stats?hours=0", "/api/events?port=70000"]
+    "path",
+    [
+        "/api/events?limit=0",
+        "/api/events?limit=5001",
+        "/api/events?severity=EXTREME",
+        "/api/stats?hours=0",
+        "/api/events?port=70000",
+    ],
 )
 def test_validation_errors(client, path):
     assert client.get(path).status_code == 422

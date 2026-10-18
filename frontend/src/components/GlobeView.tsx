@@ -95,6 +95,8 @@ export default function GlobeView({ arcs, rings, sources, sensor, onSelect }: Pr
     return () => observer.disconnect();
   }, []);
 
+  const narrow = size.width < 700;
+
   useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
@@ -104,8 +106,10 @@ export default function GlobeView({ arcs, rings, sources, sensor, onSelect }: Pr
     controls.enableZoom = true;
     controls.minDistance = 180;
     controls.maxDistance = 600;
-    globe.pointOfView({ lat: sensor?.latitude ?? 30, lng: (sensor?.longitude ?? 10) + 25, altitude: 2.3 }, 0);
-  }, [sensor]);
+    // Pull the camera back on narrow screens so the whole globe fits.
+    const altitude = narrow ? 3.4 : 2.3;
+    globe.pointOfView({ lat: sensor?.latitude ?? 30, lng: (sensor?.longitude ?? 10) + 25, altitude }, 0);
+  }, [sensor, narrow]);
 
   // One point per distinct source location (newest event wins), plus the sensor.
   const points = useMemo<PointDatum[]>(() => {
