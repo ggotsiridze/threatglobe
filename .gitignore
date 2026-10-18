@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- ThreatGlobe ---
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+.ruff_cache/
+*.tsbuildinfo
