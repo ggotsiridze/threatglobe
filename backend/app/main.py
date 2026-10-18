@@ -22,7 +22,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 def build_source(settings: Settings) -> EventSource:
     if settings.source == "demo":
-        return DemoEventSource(settings.demo_data_path, settings.demo_events_per_second)
+        return DemoEventSource(
+            settings.demo_data_path,
+            settings.demo_events_per_second,
+            history_hours=settings.demo_history_hours,
+            max_history_events=settings.max_stored_events,
+        )
     raise RuntimeError(
         "THREATGLOBE_SOURCE=tpot is not available yet: the T-Pot/Elasticsearch adapter "
         "REQUIRES REAL T-POT and has not been implemented. Use THREATGLOBE_SOURCE=demo."
@@ -40,6 +45,8 @@ def create_app(settings: Settings | None = None, source: EventSource | None = No
             Broadcaster(),
             public_mode=settings.public_mode,
             stats_window_hours=settings.stats_window_hours,
+            timeline_hours=settings.timeline_hours,
+            timeline_bucket_minutes=settings.timeline_bucket_minutes,
             snapshot_interval=settings.snapshot_interval_seconds,
         )
         app.state.pipeline = pipeline

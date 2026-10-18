@@ -12,6 +12,7 @@ from app.main import create_app
 def make_settings(**overrides) -> Settings:
     base = {
         "DEMO_STREAM_ENABLED": False,
+        "DEMO_HISTORY_HOURS": 1,
         "SNAPSHOT_INTERVAL_SECONDS": 0.2,
         "ELASTICSEARCH_URL": "https://es.internal.example:9200",
         "ELASTICSEARCH_PASSWORD": "super-secret-test-password",
@@ -20,13 +21,13 @@ def make_settings(**overrides) -> Settings:
     return Settings(_env_file=None, **base)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client() -> Iterator[TestClient]:
     with TestClient(create_app(make_settings())) as c:
         yield c
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def private_client() -> Iterator[TestClient]:
     with TestClient(create_app(make_settings(PUBLIC_MODE=False))) as c:
         yield c

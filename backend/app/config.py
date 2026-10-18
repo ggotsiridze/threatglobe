@@ -26,7 +26,8 @@ class Settings(BaseSettings):
 
     # Demo source
     demo_data_path: Path = Field(default=DEFAULT_DEMO_PATH, alias="DEMO_DATA_PATH")
-    demo_events_per_second: float = Field(default=1.5, alias="DEMO_EVENTS_PER_SECOND")
+    demo_events_per_second: float = Field(default=1.2, alias="DEMO_EVENTS_PER_SECOND")
+    demo_history_hours: float = Field(default=6.0, alias="DEMO_HISTORY_HOURS")
     demo_stream_enabled: bool = Field(default=True, alias="DEMO_STREAM_ENABLED")
 
     # Sensor (honeypot destination) shown on the globe. Deliberately coarse.
@@ -39,6 +40,8 @@ class Settings(BaseSettings):
     # Store / streaming
     max_stored_events: int = Field(default=50_000, alias="MAX_STORED_EVENTS")
     stats_window_hours: int = Field(default=24, alias="STATS_WINDOW_HOURS")
+    timeline_hours: int = Field(default=6, alias="TIMELINE_HOURS")
+    timeline_bucket_minutes: int = Field(default=10, alias="TIMELINE_BUCKET_MINUTES")
     snapshot_interval_seconds: float = Field(default=5.0, alias="SNAPSHOT_INTERVAL_SECONDS")
 
     # Future T-Pot / Elasticsearch source (REQUIRES REAL T-POT). Never exposed.

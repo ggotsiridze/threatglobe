@@ -64,7 +64,7 @@ async def stats(request: Request, hours: Hours = 24) -> dict:
 @router.get("/api/events", tags=["events"])
 async def events(
     request: Request,
-    limit: Annotated[int, Query(ge=1, le=2000)] = 100,
+    limit: Annotated[int, Query(ge=1, le=5000)] = 100,
     since: datetime | None = None,
     until: datetime | None = None,
     severity: Severity | None = None,

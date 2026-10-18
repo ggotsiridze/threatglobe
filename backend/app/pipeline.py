@@ -31,6 +31,8 @@ class EventPipeline:
         *,
         public_mode: bool,
         stats_window_hours: int = 24,
+        timeline_hours: int = 6,
+        timeline_bucket_minutes: int = 10,
         snapshot_interval: float = 5.0,
     ) -> None:
         self.source = source
@@ -39,6 +41,8 @@ class EventPipeline:
         self.risk = RiskEngine()
         self.public_mode = public_mode
         self.stats_window_hours = stats_window_hours
+        self.timeline_hours = timeline_hours
+        self.timeline_bucket_minutes = timeline_bucket_minutes
         self.snapshot_interval = snapshot_interval
         self.started_at = datetime.now(UTC)
         self.ingested = 0
@@ -65,7 +69,7 @@ class EventPipeline:
     def snapshot(self) -> dict:
         return {
             "stats": self.store.stats(self.stats_window_hours).model_dump(mode="json"),
-            "timeline": self.store.timeline(self.stats_window_hours, 60).model_dump(mode="json"),
+            "timeline": self.store.timeline(self.timeline_hours, self.timeline_bucket_minutes).model_dump(mode="json"),
         }
 
     async def load_history(self) -> int:

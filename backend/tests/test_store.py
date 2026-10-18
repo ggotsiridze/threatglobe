@@ -77,5 +77,7 @@ def test_timeline_buckets():
     assert len(tl.buckets) == 3
     assert sum(b.total for b in tl.buckets) == 3
     last = tl.buckets[-1]
-    assert last.start == datetime(2026, 1, 15, 12, tzinfo=UTC) and last.high == 1
+    # Rolling buckets end exactly at "now".
+    assert last.start == NOW - timedelta(hours=1) and last.high == 1
+    assert tl.buckets[0].start == NOW - timedelta(hours=3)
     assert tl.buckets[-2].critical == 1 and tl.buckets[-2].low == 1

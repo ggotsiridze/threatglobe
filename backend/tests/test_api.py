@@ -16,7 +16,7 @@ def test_status_reports_demo_without_secrets(client):
     assert r.status_code == 200
     body = r.json()
     assert body["mode"] == "demo" and body["public_mode"] is True
-    assert body["events_stored"] >= 1000
+    assert body["events_stored"] >= 3000  # ~1h at 1.2 events/s
     assert SECRET not in r.text and "es.internal" not in r.text
     assert {"rule", "points"} <= set(body["risk_rules"][0])
 
@@ -55,8 +55,14 @@ def test_event_detail_and_404(client):
     assert client.get("/api/events/does-not-exist").status_code == 404
 
 
+def test_replay_sized_request_is_accepted(client):
+    # The frontend replay loads up to 5000 events in one request.
+    r = client.get("/api/events", params={"limit": 5000, "order": "asc"})
+    assert r.status_code == 200 and r.json()["count"] > 1000
+
+
 @pytest.mark.parametrize(
-    "path", ["/api/events?limit=0", "/api/events?severity=EXTREME", "/api/stats?hours=0", "/api/events?port=70000"]
+    "path", ["/api/events?limit=0", "/api/events?limit=5001", "/api/events?severity=EXTREME", "/api/stats?hours=0", "/api/events?port=70000"]
 )
 def test_validation_errors(client, path):
     assert client.get(path).status_code == 422
@@ -73,7 +79,9 @@ def test_top_lists(client, path):
 def test_timeline(client):
     tl = client.get("/api/timeline", params={"hours": 24, "bucket_minutes": 60}).json()
     assert tl["bucket_minutes"] == 60 and len(tl["buckets"]) == 24
-    assert sum(b["total"] for b in tl["buckets"]) > 0
+    # Test settings load DEMO_HISTORY_HOURS=1, so only the newest buckets have data.
+    assert sum(b["total"] for b in tl["buckets"][-2:]) > 0
+    assert sum(b["total"] for b in tl["buckets"][:-3]) == 0
 
 
 def test_private_mode_exposes_full_ip(private_client):
@@ -87,12 +95,13 @@ def test_no_secret_in_any_response(client):
 
 
 def test_websocket_hello_then_streamed_attacks():
-    settings = make_settings(DEMO_STREAM_ENABLED=True, DEMO_EVENTS_PER_SECOND=200)
+    settings = make_settings(DEMO_STREAM_ENABLED=True, DEMO_EVENTS_PER_SECOND=200, DEMO_HISTORY_HOURS=0.05)
     with TestClient(create_app(settings)) as c, c.websocket_connect("/ws/attacks") as ws:
         hello = ws.receive_json()
         assert hello["type"] == "hello" and hello["data"]["mode"] == "demo"
         assert len(hello["data"]["recent"]) == 40
         assert hello["data"]["snapshot"]["stats"]["events_today"] > 0
+        assert hello["data"]["snapshot"]["timeline"]["bucket_minutes"] == 10
         ws.send_text("ping")
         seen = set()
         attacks = []

@@ -31,20 +31,34 @@ def test_every_demo_document_normalizes():
         normalize_document(doc, raw_source_type="demo")
 
 
-def test_history_is_rebased_to_now_and_chronological():
+def test_history_covers_window_at_configured_rate():
     fixed_now = datetime(2026, 10, 1, 12, tzinfo=UTC)
-    src = DemoEventSource(DEFAULT_DEMO_PATH, clock=lambda: fixed_now)
+    src = DemoEventSource(DEFAULT_DEMO_PATH, events_per_second=1.0, history_hours=2, clock=lambda: fixed_now)
     history = asyncio.run(src.load_history())
     times = [parse_timestamp(d["@timestamp"]) for d in history]
     assert times == sorted(times)
-    assert (fixed_now - times[-1]).total_seconds() == 5
-    assert (times[-1] - times[0]).total_seconds() < 24 * 3600
+    assert (fixed_now - times[-1]).total_seconds() == 1
+    assert 0 < (fixed_now - times[0]).total_seconds() <= 2 * 3600
+    # Average density matches the live rate (within 15%), so the volume chart has no cliff.
+    assert 0.85 * 7200 <= len(history) <= 1.15 * 7200
+    # History is longer than the dataset, so the loop wraps; ids stay unique.
+    assert len(history) > src.size
     assert len({d["_id"] for d in history}) == len(history)
+
+
+def test_history_size_is_capped():
+    src = DemoEventSource(DEFAULT_DEMO_PATH, events_per_second=1000, history_hours=24, max_history_events=500)
+    history = asyncio.run(src.load_history())
+    assert len(history) == 500
+
+
+def test_history_can_be_disabled():
+    assert asyncio.run(DemoEventSource(DEFAULT_DEMO_PATH, history_hours=0).load_history()) == []
 
 
 def test_stream_yields_fresh_ids_in_order():
     async def take(n):
-        src = DemoEventSource(DEFAULT_DEMO_PATH, events_per_second=10_000, rng=random.Random(1))
+        src = DemoEventSource(DEFAULT_DEMO_PATH, events_per_second=50_000, rng=random.Random(1))
         out = []
         async for doc in src.stream():
             out.append(doc)

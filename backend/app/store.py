@@ -144,15 +144,15 @@ class EventStore:
     def timeline(self, hours: int = 24, bucket_minutes: int = 60, now: datetime | None = None) -> Timeline:
         now = now or datetime.now(UTC)
         bucket = timedelta(minutes=bucket_minutes)
-        # Align bucket boundaries to the epoch so they are stable between calls.
-        epoch = datetime(1970, 1, 1, tzinfo=UTC)
-        end = epoch + ((now - epoch) // bucket + 1) * bucket
+        # Rolling buckets ending at ``now``: every bucket is complete, so the
+        # newest one never shows a misleading partial-bucket "drop".
+        end = now
         count = max(1, int(timedelta(hours=hours) / bucket))
         start = end - count * bucket
         buckets = [TimelineBucket(start=start + i * bucket, total=0) for i in range(count)]
         for e in self._since(start):
             idx = int((e.timestamp - start) / bucket)
-            if 0 <= idx < count:
+            if 0 <= idx < count and e.timestamp < end:
                 b = buckets[idx]
                 b.total += 1
                 level = e.severity.value.lower()
